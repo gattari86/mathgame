@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MathCrafters: Block Adventures</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        /* Apply the game font globally */
+        body {
+            font-family: 'Press Start 2P', cursive;
+            background-color: #87CEEB; /* Sky blue background */
+            color: #333;
+            overflow: hidden; /* Prevent scrolling */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        /* Basic block styling */
+        .block {
+            border: 4px solid #4a4a4a; /* Dark border for block effect */
+            box-shadow: 4px 4px 0px #4a4a4a; /* Simple shadow for depth */
+            transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
+        }
+        .block:active:not(:disabled) {
+             transform: translate(2px, 2px);
+             box-shadow: 2px 2px 0px #4a4a4a;
+        }
+        /* Button styling */
+        .game-button {
+            @apply block text-white font-bold py-3 px-6 rounded-lg cursor-pointer text-center text-sm md:text-base;
+            background-color: #4CAF50; /* Green */
+            border-color: #367c39;
+        }
+        .game-button:hover:not(:disabled) {
+            background-color: #45a049;
+        }
+         .game-button:disabled {
+            background-color: #cccccc;
+            border-color: #999999;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        /* Character Selection Styles */
+        .character-option {
+            @apply w-20 h-20 md:w-24 md:h-24 m-2 cursor-pointer rounded-md flex items-center justify-center;
+            border: 6px solid transparent; /* For selection indication */
+        }
+        .character-option.selected {
+            border-color: #FFD700; /* Gold border when selected */
+            box-shadow: 6px 6px 0px #DAA520; /* Darker gold shadow */
+        }
+        /* Simple feedback message styling */
+        #feedback-message {
+            min-height: 2rem; /* Reserve space */
+            font-size: 1rem; /* Slightly larger feedback text */
+        }
+        .correct {
+            color: #2E8B57; /* Sea Green */
+        }
+        .incorrect {
+            color: #DC143C; /* Crimson */
+        }
+        /* Ensure hidden screens are truly hidden */
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-sky-200">
+
+    <div id="game-container" class="bg-amber-100 p-6 md:p-10 rounded-lg shadow-xl border-4 border-yellow-900 max-w-3xl w-full text-center">
+
+        <div id="character-select-screen">
+            <h1 class="text-xl md:text-3xl mb-6 text-yellow-900">Choose Your MathCrafter!</h1>
+            <div id="character-options" class="flex justify-center items-center flex-wrap mb-6">
+                </div>
+            <div class="mb-4">
+                <p class="text-sm md:text-base">Your Pick:</p>
+                <div id="character-preview" class="w-16 h-16 md:w-20 md:h-20 mx-auto mt-2 rounded-md block" style="background-color: #ccc;"></div>
+            </div>
+            <button id="confirm-character-button" class="game-button block mx-auto" disabled>Let's Go!</button>
+        </div>
+
+        <div id="level-select-screen" class="hidden">
+            <h1 class="text-xl md:text-3xl mb-6 text-yellow-900">Select Difficulty</h1>
+            <div class="space-y-4">
+                <button id="level-easy" data-difficulty="easy" class="game-button block w-full md:w-3/4 mx-auto" style="background-color: #66BB6A;">Easy Peasy</button> <button id="level-medium" data-difficulty="medium" class="game-button block w-full md:w-3/4 mx-auto" style="background-color: #FFA726;">Medium Fun</button> <button id="level-hard" data-difficulty="hard" class="game-button block w-full md:w-3/4 mx-auto" style="background-color: #EF5350;">Super Challenge</button> </div>
+             <button id="back-to-character-select" class="game-button block mx-auto mt-6 text-xs" style="background-color: #78909C;">Change Character</button> </div>
+
+        <div id="game-screen" class="hidden">
+            <div class="flex justify-between items-center mb-4">
+                 <div id="player-char-display" class="w-10 h-10 rounded-sm block"></div>
+                 <h2 id="level-title" class="text-lg md:text-2xl text-yellow-900">Level: Easy</h2>
+                 <div id="score" class="text-base md:text-lg">Score: 0</div>
+            </div>
+
+            <div id="problem-area" class="bg-white p-4 md:p-6 rounded-lg shadow-inner min-h-[200px] md:min-h-[250px] mb-4 border-2 border-gray-300 flex flex-col justify-center items-center">
+                <p id="instruction-text" class="text-sm md:text-lg mb-4">Let's get started!</p>
+                <div id="visual-problem" class="flex flex-wrap justify-center items-center gap-2 mb-4">
+                    </div>
+                <div id="answer-options" class="flex justify-center items-center gap-3 mt-4">
+                    </div>
+            </div>
+
+            <div id="feedback-message" class="mt-4 font-bold text-center">&nbsp;</div>
+
+            <button id="quit-level-button" class="game-button block mx-auto mt-6 text-xs" style="background-color: #78909C;">Change Level</button> </div>
+
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const characterSelectScreen = document.getElementById('character-select-screen');
+        const levelSelectScreen = document.getElementById('level-select-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const characterOptionsContainer = document.getElementById('character-options');
+        const characterPreview = document.getElementById('character-preview');
+        const confirmCharacterButton = document.getElementById('confirm-character-button');
+        const backToCharacterSelectButton = document.getElementById('back-to-character-select');
+        const levelButtons = [
+            document.getElementById('level-easy'),
+            document.getElementById('level-medium'),
+            document.getElementById('level-hard')
+        ];
+        const playerCharDisplay = document.getElementById('player-char-display');
+        const levelTitle = document.getElementById('level-title');
+        const scoreDisplay = document.getElementById('score');
+        const instructionText = document.getElementById('instruction-text');
+        const visualProblemArea = document.getElementById('visual-problem');
+        const answerOptionsArea = document.getElementById('answer-options');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const quitLevelButton = document.getElementById('quit-level-button');
+
+        // --- Game State ---
+        let gameState = {
+            currentScreen: 'character-select', // 'character-select', 'level-select', 'game'
+            selectedCharacter: {
+                color: '#ccc', // Default color
+                // Add other properties like accessory later
+            },
+            selectedDifficulty: null, // 'easy', 'medium', 'hard'
+            score: 0,
+            currentProblem: null, // Stores details of the current math problem
+        };
+
+        // --- Character Data ---
+        const characters = [
+            { id: 'blue', color: '#6495ED' }, // Cornflower Blue
+            { id: 'green', color: '#90EE90' }, // Light Green
+            { id: 'pink', color: '#FFB6C1' }, // Light Pink
+            { id: 'yellow', color: '#FAFAD2' }, // Light Goldenrod Yellow
+        ];
+
+        // --- Initialization ---
+        function initializeGame() {
+            setupCharacterSelection();
+            showScreen('character-select'); // Start at character selection
+            addEventListeners();
+        }
+
+        // --- Screen Management ---
+        function showScreen(screenName) {
+            characterSelectScreen.classList.add('hidden');
+            levelSelectScreen.classList.add('hidden');
+            gameScreen.classList.add('hidden');
+
+            gameState.currentScreen = screenName;
+
+            if (screenName === 'character-select') {
+                characterSelectScreen.classList.remove('hidden');
+            } else if (screenName === 'level-select') {
+                levelSelectScreen.classList.remove('hidden');
+            } else if (screenName === 'game') {
+                gameScreen.classList.remove('hidden');
+            }
+            console.log(`Switched to screen: ${screenName}`);
+        }
+
+        // --- Character Selection Logic ---
+        function setupCharacterSelection() {
+            characterOptionsContainer.innerHTML = ''; // Clear previous options
+            characters.forEach(char => {
+                const optionDiv = document.createElement('div');
+                optionDiv.classList.add('character-option', 'block');
+                optionDiv.style.backgroundColor = char.color;
+                optionDiv.dataset.color = char.color; // Store color data
+
+                optionDiv.addEventListener('click', () => selectCharacter(optionDiv, char.color));
+                characterOptionsContainer.appendChild(optionDiv);
+            });
+            // Reset selection state
+            gameState.selectedCharacter.color = '#ccc';
+            characterPreview.style.backgroundColor = gameState.selectedCharacter.color;
+            confirmCharacterButton.disabled = true;
+             // Clear previous selections visually
+            document.querySelectorAll('.character-option.selected').forEach(el => el.classList.remove('selected'));
+        }
+
+        function selectCharacter(selectedDiv, color) {
+            // Remove 'selected' class from all options
+            document.querySelectorAll('.character-option').forEach(div => {
+                div.classList.remove('selected');
+            });
+            // Add 'selected' class to the clicked one
+            selectedDiv.classList.add('selected');
+
+            // Update game state and preview
+            gameState.selectedCharacter.color = color;
+            characterPreview.style.backgroundColor = color;
+            confirmCharacterButton.disabled = false; // Enable confirm button
+             console.log(`Character selected: ${color}`);
+        }
+
+        // --- Level Selection and Game Start ---
+        function selectLevel(difficulty) {
+            gameState.selectedDifficulty = difficulty;
+            gameState.score = 0; // Reset score for new level
+            scoreDisplay.textContent = `Score: ${gameState.score}`;
+            levelTitle.textContent = `Level: ${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}`;
+            playerCharDisplay.style.backgroundColor = gameState.selectedCharacter.color; // Show selected char color
+            feedbackMessage.textContent = '\u00A0'; // Clear feedback (using non-breaking space for layout)
+            feedbackMessage.className = ''; // Reset feedback style
+            console.log(`Level selected: ${difficulty}`);
+            showScreen('game');
+            // *** Start generating the first problem for the selected level ***
+            generateAndDisplayProblem();
+        }
+
+        // --- Core Game Logic (Placeholders) ---
+        function generateAndDisplayProblem() {
+            // Clear previous problem
+            instructionText.textContent = '';
+            visualProblemArea.innerHTML = '';
+            answerOptionsArea.innerHTML = '';
+            feedbackMessage.textContent = '\u00A0'; // Clear feedback
+            feedbackMessage.className = '';
+
+            // *** This is where the core math problem generation will happen based on gameState.selectedDifficulty ***
+            console.log(`Generating problem for difficulty: ${gameState.selectedDifficulty}`);
+
+            // --- Placeholder Problem Generation ---
+            const difficulty = gameState.selectedDifficulty;
+            let problem = {}; // Will hold { question, type, correctAnswer, options, visualData }
+
+            // Example: Simple Counting Problem (Easy)
+            if (difficulty === 'easy') {
+                const count = Math.floor(Math.random() * 5) + 1; // Count 1 to 5
+                problem = {
+                    question: `Count the blocks:`,
+                    type: 'count',
+                    correctAnswer: count,
+                    options: generateNumberOptions(count, 4, 10), // Generate options around the answer
+                    visualData: { type: 'blocks', count: count, color: gameState.selectedCharacter.color }
+                };
+            }
+            // Example: Simple Addition Problem (Medium)
+            else if (difficulty === 'medium') {
+                 const num1 = Math.floor(Math.random() * 5) + 1; // 1 to 5
+                 const num2 = Math.floor(Math.random() * 5) + 1; // 1 to 5
+                 const answer = num1 + num2;
+                 problem = {
+                    question: `What is ${num1} + ${num2}?`,
+                    type: 'addition',
+                    correctAnswer: answer,
+                    options: generateNumberOptions(answer, 4, 15),
+                    visualData: { type: 'addition_blocks', counts: [num1, num2], colors: ['#FF6347', '#4682B4'] } // Tomato, SteelBlue
+                 };
+            }
+             // Example: Simple Subtraction Problem (Hard)
+            else if (difficulty === 'hard') {
+                const num1 = Math.floor(Math.random() * 6) + 5; // 5 to 10
+                const num2 = Math.floor(Math.random() * num1) + 1; // 1 to num1
+                const answer = num1 - num2;
+                 problem = {
+                    question: `What is ${num1} - ${num2}?`,
+                    type: 'subtraction',
+                    correctAnswer: answer,
+                    options: generateNumberOptions(answer, 4, 10),
+                     visualData: { type: 'subtraction_blocks', count1: num1, count2: num2, color: '#3CB371' } // MediumSeaGreen
+                 };
+            } else {
+                 problem = { question: "Select a level!", type: 'none', correctAnswer: 0, options: [], visualData: {} };
+            }
+
+
+            gameState.currentProblem = problem;
+            displayProblem(problem);
+            // ------------------------------------
+        }
+
+        // Function to generate plausible number options for multiple choice
+        function generateNumberOptions(correctAnswer, numOptions, maxRange) {
+            let options = new Set([correctAnswer]);
+            while (options.size < numOptions) {
+                let randomOption = Math.floor(Math.random() * (maxRange + 1));
+                 // Ensure options are somewhat close and non-negative
+                if (randomOption >= 0 && Math.abs(randomOption - correctAnswer) < (maxRange / 1.5)) {
+                     options.add(randomOption);
+                }
+                 // Fallback if it takes too long to find close options
+                 if (options.size < numOptions && Math.random() > 0.95) {
+                     options.add(Math.max(0, correctAnswer + (options.size % 2 === 0 ? 1 : -1) * (Math.floor(options.size / 2) + 1)));
+                 }
+            }
+            // Convert Set to array and shuffle
+            return Array.from(options).sort(() => Math.random() - 0.5);
+        }
+
+
+        function displayProblem(problem) {
+            instructionText.textContent = problem.question;
+
+            // --- Display Visuals ---
+            visualProblemArea.innerHTML = ''; // Clear previous visuals
+            if (problem.visualData?.type === 'blocks') {
+                for (let i = 0; i < problem.visualData.count; i++) {
+                    const block = document.createElement('div');
+                    block.classList.add('w-10', 'h-10', 'm-1', 'block'); // Added 'block' class
+                    block.style.backgroundColor = problem.visualData.color || gameState.selectedCharacter.color;
+                    visualProblemArea.appendChild(block);
+                }
+            } else if (problem.visualData?.type === 'addition_blocks') {
+                 // Group 1
+                 problem.visualData.counts[0].forEach((_, i) => {
+                     const block = document.createElement('div');
+                     block.classList.add('w-8', 'h-8', 'm-1', 'block');
+                     block.style.backgroundColor = problem.visualData.colors[0];
+                     visualProblemArea.appendChild(block);
+                 });
+                 // Plus Sign
+                 const plus = document.createElement('span');
+                 plus.textContent = '+';
+                 plus.classList.add('text-3xl', 'mx-2', 'font-bold');
+                 visualProblemArea.appendChild(plus);
+                  // Group 2
+                 problem.visualData.counts[1].forEach((_, i) => {
+                     const block = document.createElement('div');
+                     block.classList.add('w-8', 'h-8', 'm-1', 'block');
+                     block.style.backgroundColor = problem.visualData.colors[1];
+                     visualProblemArea.appendChild(block);
+                 });
+
+            } else if (problem.visualData?.type === 'subtraction_blocks') {
+                 // Initial group
+                 for(let i = 0; i < problem.visualData.count1; i++) {
+                     const block = document.createElement('div');
+                     block.classList.add('w-8', 'h-8', 'm-1', 'block', 'inline-block'); // inline-block helps with strike-through
+                     block.style.backgroundColor = problem.visualData.color;
+                      // Add strike-through for the ones being subtracted
+                     if (i >= (problem.visualData.count1 - problem.visualData.count2)) {
+                        block.style.textDecoration = 'line-through';
+                        block.style.opacity = '0.5';
+                     }
+                     visualProblemArea.appendChild(block);
+                 }
+            }
+            // Add more visual types later (shapes, comparisons etc.)
+
+
+            // --- Display Answer Options ---
+            answerOptionsArea.innerHTML = ''; // Clear previous options
+            problem.options.forEach(option => {
+                const button = document.createElement('button');
+                button.classList.add('game-button', 'block', 'text-xl', 'md:text-2xl', 'px-4', 'py-2');
+                button.textContent = option;
+                button.addEventListener('click', () => checkAnswer(option));
+                answerOptionsArea.appendChild(button);
+            });
+        }
+
+        function checkAnswer(userAnswer) {
+            const correctAnswer = gameState.currentProblem.correctAnswer;
+            console.log(`User answered: ${userAnswer}, Correct: ${correctAnswer}`);
+
+            // Disable answer buttons after selection
+            answerOptionsArea.querySelectorAll('button').forEach(btn => btn.disabled = true);
+
+            if (parseInt(userAnswer) === correctAnswer) {
+                feedbackMessage.textContent = "Correct! Yay!";
+                feedbackMessage.className = 'correct mt-4 font-bold text-center'; // Add back classes
+                gameState.score++;
+                scoreDisplay.textContent = `Score: ${gameState.score}`;
+                // Add sparkle effect or sound later
+                setTimeout(generateAndDisplayProblem, 1500); // Load next problem after a delay
+            } else {
+                feedbackMessage.textContent = `Oops! The answer was ${correctAnswer}. Try the next one!`;
+                feedbackMessage.className = 'incorrect mt-4 font-bold text-center'; // Add back classes
+                 // Highlight correct answer? (Optional)
+                 answerOptionsArea.querySelectorAll('button').forEach(btn => {
+                     if(parseInt(btn.textContent) === correctAnswer) {
+                         btn.style.backgroundColor = '#FFD700'; // Highlight correct in gold
+                         btn.style.borderColor = '#DAA520';
+                     }
+                 });
+                setTimeout(generateAndDisplayProblem, 2500); // Longer delay for incorrect
+            }
+        }
+
+        // --- Event Listeners ---
+        function addEventListeners() {
+            confirmCharacterButton.addEventListener('click', () => {
+                 if (!confirmCharacterButton.disabled) {
+                    showScreen('level-select');
+                 }
+            });
+
+            backToCharacterSelectButton.addEventListener('click', () => {
+                setupCharacterSelection(); // Reset character selection UI
+                showScreen('character-select');
+            });
+
+
+            levelButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    selectLevel(button.dataset.difficulty);
+                });
+            });
+
+             quitLevelButton.addEventListener('click', () => {
+                showScreen('level-select');
+                 // Optionally reset problem state if needed
+                 gameState.currentProblem = null;
+                 instructionText.textContent = '';
+                 visualProblemArea.innerHTML = '';
+                 answerOptionsArea.innerHTML = '';
+                 feedbackMessage.textContent = '\u00A0';
+                 feedbackMessage.className = '';
+            });
+        }
+
+        // --- Start the game ---
+        document.addEventListener('DOMContentLoaded', initializeGame);
+
+    </script>
+
+</body>
+</html>
