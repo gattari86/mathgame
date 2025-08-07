@@ -12,8 +12,17 @@
 
     <div id="game-container" class="bg-amber-100 p-6 md:p-10 rounded-lg shadow-xl border-4 border-yellow-900 max-w-3xl w-full text-center">
 
-        <!-- Screen 1: Character Selection -->
-        <div id="character-select-screen">
+        <!-- Screen 0: Start Screen -->
+        <div id="start-screen">
+            <h1 class="text-2xl md:text-4xl mb-4 text-yellow-900">MathCrafters</h1>
+            <p class="text-lg md:text-xl mb-8">Block Adventures</p>
+            <button id="start-button" class="game-button text-xl md:text-2xl" style="background-color: #2ECC71; border-color: #27AE60; box-shadow: 4px 4px 0px #27AE60;">
+                Click to Start
+            </button>
+        </div>
+
+        <!-- Screen 1: Character Selection (initially hidden) -->
+        <div id="character-select-screen" class="hidden">
             <h1 class="text-xl md:text-3xl mb-6 text-yellow-900">Choose Your MathCrafter!</h1>
             <div id="character-options" class="flex justify-center items-center flex-wrap mb-6"></div>
             <div class="mb-4">
@@ -23,7 +32,7 @@
             <button id="confirm-character-button" class="game-button block mx-auto" disabled>Let's Go!</button>
         </div>
 
-        <!-- Screen 2: Level Selection -->
+        <!-- Screen 2: Level Selection (initially hidden) -->
         <div id="level-select-screen" class="hidden">
             <h1 class="text-xl md:text-3xl mb-6 text-yellow-900">Select Difficulty</h1>
             <div class="space-y-4">
@@ -35,7 +44,7 @@
             <button id="back-to-character-select" class="game-button block mx-auto mt-6 text-xs" style="background-color: #78909C;">Change Character</button>
         </div>
 
-        <!-- Screen 3: Game Screen -->
+        <!-- Screen 3: Game Screen (initially hidden) -->
         <div id="game-screen" class="hidden">
             <div class="flex justify-between items-center mb-4 text-sm md:text-base">
                  <div id="player-char-display" class="w-10 h-10 rounded-sm block"></div>
@@ -55,7 +64,7 @@
             <button id="quit-level-button" class="game-button block mx-auto mt-6 text-xs" style="background-color: #78909C;">Change Level</button>
         </div>
 
-        <!-- Screen 4: World Screen -->
+        <!-- Screen 4: World Screen (initially hidden) -->
         <div id="world-screen" class="hidden">
             <h1 class="text-xl md:text-3xl mb-4 text-yellow-900">My World</h1>
             <div class="flex justify-between items-center mb-4 text-sm md:text-base">

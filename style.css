@@ -16,6 +16,12 @@
     50% { background-color: #FFD700; }
 }
 
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
 /* --- Animation Classes --- */
 .animate-pop {
     animation: pop 0.3s ease-out;
@@ -110,6 +116,20 @@ body {
 /* Ensure hidden screens are truly hidden */
 .hidden {
     display: none;
+}
+
+/* --- Start Screen Styles --- */
+#start-screen {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 300px; /* Give it some size */
+}
+
+#start-button {
+    /* The animation makes the button unstable for Playwright, so it's disabled. */
+    /* animation: pulse 2s infinite ease-in-out; */
 }
 
 /* Specific button colors */
